@@ -1,8 +1,10 @@
 import datetime
 import pandas
 import collections
+import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from dotenv import load_dotenv
 
 
 def get_word(age):
@@ -24,14 +26,14 @@ def get_word(age):
 
 
 def main():
-
+    load_dotenv()
     wines = pandas.read_excel(
-        "wine3.xlsx", na_values=["N/A", "NA"], keep_default_na=False
+        os.environ["XLSX_FILE"], na_values=["N/A", "NA"], keep_default_na=False
     ).to_dict("records")
 
-    dict_of_lists = collections.defaultdict(list)
+    grouped_wines = collections.defaultdict(list)
     for wine in wines:
-        dict_of_lists[wine["Категория"]].append(wine)
+        grouped_wines[wine["Категория"]].append(wine)
 
     env = Environment(
         loader=FileSystemLoader("."), autoescape=select_autoescape(["html", "xml"])
@@ -41,7 +43,7 @@ def main():
     now = datetime.datetime.now()
     age = now.year - 1920
 
-    rendered_page = template.render(age=age, wines=dict_of_lists, word=get_word(age))
+    rendered_page = template.render(age=age, wines=grouped_wines, word=get_word(age))
 
     with open("index.html", "w", encoding="utf8") as file:
         file.write(rendered_page)
